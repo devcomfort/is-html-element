@@ -82,22 +82,24 @@ jobs:
 
             Follow these rules for your response:
             1.  **Dual Audience Structure**: The release notes MUST contain two main sections: "🎉 For Everyone" and "🛠️ For Developers".
-            2.  **"For Everyone" Section**:
-                - Write a brief, high-level summary of the most important changes.
-                - Use simple, non-technical language. Focus on the benefits and what users can now do.
-                - Avoid jargon, commit hashes, or technical details.
-            3.  **"For Developers" Section**:
-                - This section should contain the detailed technical changelog.
-                - **Versioning**: Determine the version bump (major, minor, patch) based on conventional commit types. A `BREAKING CHANGE` in the commit body or footer indicates a `major` bump.
-                - **Breaking Changes**: If any commit contains 'BREAKING CHANGE', create a dedicated '#### 🚨 BREAKING CHANGES' subsection at the top of the "For Developers" section.
+            2.  **"For Everyone" Section - High-Level Summary & Highlights**:
+                - First, write a brief, engaging 1-2 sentence summary of the release's main theme.
+                - Below the summary, create a bulleted list of "Highlights".
+                - To create the highlights, analyze all the commit categories (`feat`, `fix`, `chore`, etc.) from the developer section.
+                - Group the changes into user-friendly themes like "✨ New Features", "✅ Reliability & Performance", or "🚀 Documentation & Housekeeping".
+                - **Crucially, ensure every major theme from the developer section is represented in these highlights.** Write in simple, benefit-oriented language. Do not use technical jargon or commit hashes.
+            3.  **"For Developers" Section - Detailed Changelog**:
+                - This section must contain the detailed technical changelog.
+                - **Versioning**: Determine the version bump (major, minor, patch) based on conventional commit types. A `BREAKING CHANGE` indicates a `major` bump.
+                - **Breaking Changes**: If present, create a '#### 🚨 BREAKING CHANGES' subsection at the top.
                 - **Categorization**: Group other commits into '#### ✨ Features', '#### 🐛 Bug Fixes', and '#### 🚀 Miscellaneous'.
-                - **Formatting Each Entry**: For each commit, create a bullet point including a link to the commit and the author. Format: `- <Description>. ([<hash>](https://github.com/${{ github.repository }}/commit/<hash>)) by @<author>`
+                - **Formatting Each Entry**: Format as `- <Description>. ([<hash>](...)) by @<author>`.
             4.  **Output Format**: Your entire response MUST be a single, valid JSON object. Do not add any other text. The value for "release_notes" must be a valid JSON string (newlines escaped as \\n).
 
             Example output:
             {
               "version_bump": "minor",
-              "release_notes": "### 🎉 For Everyone\n\nThis update makes our validation tool even more reliable and introduces a dark mode! We've also improved how we announce future updates, making the process smoother.\n\n### 🛠️ For Developers\n\n#### ✨ Features\n\n* Added a new dark mode toggle. ([d4e5f6g](https://github.com/devcomfort/html-element-validator/commit/d4e5f6g)) by @devcomfort\n* The release drafter now generates richer release notes. ([5212c36](https://github.com/devcomfort/html-element-validator/commit/5212c36)) by @devcomfort\n\n#### 🐛 Bug Fixes\n\n* Fixed a bug where the application would crash on invalid input. ([h7i8j9k](https://github.com/devcomfort/html-element-validator/commit/h7i8j9k)) by @devcomfort"
+              "release_notes": "### 🎉 For Everyone\n\nThis is a major update focused on making our tool more powerful and our development process incredibly reliable. We've introduced a key new feature for element validation and completely overhauled our internal systems.\n\n**Highlights:**\n* ✨ **New Core Feature**: A new, 100% accurate `isHTMLElement` function has been added.\n* ✅ **Massively Improved Reliability**: We fixed over a dozen issues in our automated testing and release pipeline, making future updates faster and more dependable.\n* 🚀 **Better Documentation & Tooling**: The project's documentation has been completely rewritten to be more helpful, and we've migrated to modern tools like PNPM for better performance.\n\n### 🛠️ For Developers\n\n#### ✨ Features\n\n* Added `isHTMLElement` function and tests. ([17e6498](https://github.com/devcomfort/html-element-validator/commit/17e6498)) by @devcomfort\n\n#### 🐛 Bug Fixes\n\n* Fixed over a dozen issues in the CI/CD pipeline. ([95efa2a](https://github.com/devcomfort/html-element-validator/commit/95efa2a)) by @devcomfort"
             }
           FIREWORKS_AI_MODEL: ${{ vars.FIREWORKS_AI_MODEL || 'accounts/fireworks/models/llama4-maverick-instruct-basic' }}
           PYTHON_PARSER: |
