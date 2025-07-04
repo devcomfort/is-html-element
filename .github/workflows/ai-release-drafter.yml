@@ -97,7 +97,7 @@ jobs:
               "version_bump": "major",
               "release_notes": "### 🚨 BREAKING CHANGES\n\n* The API endpoint for user authentication has been changed. ([a1b2c3d](https://github.com/devcomfort/html-element-validator/commit/a1b2c3d)) by @devcomfort\n\n### ✨ Features\n\n* Added a new dark mode toggle. ([d4e5f6g](https://github.com/devcomfort/html-element-validator/commit/d4e5f6g)) by @devcomfort"
             }
-          FIREWORKS_AI_MODEL: ${{ vars.FIREWORKS_AI_MODEL || 'accounts/fireworks/models/llama-v3-70b-instruct' }}
+          FIREWORKS_AI_MODEL: ${{ vars.FIREWORKS_AI_MODEL || 'accounts/fireworks/models/llama4-maverick-instruct-basic' }}
           PYTHON_PARSER: |
             import sys, json, os, re
 
@@ -153,7 +153,7 @@ jobs:
             --arg content "$prompt" \
             '{
               "model": $model,
-              "max_tokens": 1024,
+              "max_tokens": 32768,
               "temperature": 0.1,
               "messages": [
                 {
