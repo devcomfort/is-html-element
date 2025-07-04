@@ -1,0 +1,162 @@
+name: AI Release Drafter
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  draft_release:
+    runs-on: ubuntu-latest
+    outputs:
+      has_new_commits: ${{ steps.git_info.outputs.has_new_commits }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Get latest tag and commit logs
+        id: git_info
+        run: |
+          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
+
+          commit_range="${latest_tag}..HEAD"
+          if [ -z "$latest_tag" ]; then
+            commit_range="HEAD"
+          fi
+          
+          logs=$(git log $commit_range --pretty=format:"- %s")
+          
+          if [ -z "$logs" ]; then
+            echo "has_new_commits=false" >> $GITHUB_OUTPUT
+            echo "No new commits since last tag. Nothing to release."
+          else
+            echo "has_new_commits=true" >> $GITHUB_OUTPUT
+            logs_for_json=$(echo "$logs" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}')
+            echo "commit_logs=$logs_for_json" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Call AI for version and release notes
+        if: steps.git_info.outputs.has_new_commits == 'true'
+        id: ai_release_info
+        shell: bash -eo pipefail
+        env:
+          PROMPT_TEMPLATE: |
+            You are an expert at software release management.
+            Based on the following commit logs, please determine the appropriate SemVer version bump (major, minor, or patch) and generate concise, well-formatted release notes in Markdown.
+
+            Commit logs:
+            ---
+            %s
+            ---
+
+            Follow these rules for versioning:
+            - A commit starting with 'feat': suggests a 'minor' bump.
+            - A commit starting with 'fix': suggests a 'patch' bump.
+            - A commit message containing 'BREAKING CHANGE' in its body or footer: suggests a 'major' bump.
+            - If multiple types are present, choose the highest-ranking one (major > minor > patch).
+            - Other commit types (docs, chore, refactor, style, test): do not trigger a version bump on their own, but should be included in the release notes. If only these types are present, suggest 'patch'.
+
+            The output must be a single, valid JSON object with two keys: "version_bump" and "release_notes". Do not add any other text, explanations, or code block fences.
+            Example output:
+            {
+              "version_bump": "minor",
+              "release_notes": "### ✨ Features\n\n* Implemented a new search functionality.\n\n### 🐛 Bug Fixes\n\n* Fixed an issue where the login button was not visible."
+            }
+        run: |
+          prompt=$(printf "$PROMPT_TEMPLATE" "${{ steps.git_info.outputs.commit_logs }}")
+
+          json_escaped_prompt=$(echo "$prompt" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}')
+
+          payload_template='{
+            "model": "accounts/fireworks/models/firefunction-v1",
+            "max_tokens": 1024,
+            "temperature": 0.1,
+            "messages": [ { "role": "user", "content": "%s" } ]
+          }'
+          payload=$(printf "$payload_template" "$json_escaped_prompt")
+
+          response=$(curl -s -X POST https://api.fireworks.ai/inference/v1/chat/completions \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.FIREWORKS_API_KEY }}" \
+            -d "$payload"
+          )
+          
+          echo "AI Response: $response"
+          
+          ai_content=$(echo "$response" | jq -r '.choices[0].message.content')
+          
+          if ! echo "$ai_content" | jq empty; then
+            echo "Error: AI output is not valid JSON."
+            echo "Output was: $ai_content"
+            exit 1
+          fi
+
+          version_bump=$(echo "$ai_content" | jq -r '.version_bump')
+          release_notes=$(echo "$ai_content" | jq -r '.release_notes')
+
+          delimiter=$(cat /proc/sys/kernel/random/uuid)
+          echo "version_bump=$version_bump" >> $GITHUB_OUTPUT
+          echo "release_notes<<$delimiter" >> $GITHUB_OUTPUT
+          echo "$release_notes" >> $GITHUB_OUTPUT
+          echo "$delimiter" >> $GITHUB_OUTPUT
+
+      - name: Calculate next version
+        if: steps.git_info.outputs.has_new_commits == 'true'
+        id: new_version
+        run: |
+          latest_tag="${{ steps.git_info.outputs.latest_tag }}"
+          if [ -z "$latest_tag" ]; then
+            latest_tag="v0.0.0"
+          fi
+          
+          current_version=${latest_tag#v}
+          IFS='.' read -r major minor patch <<< "$current_version"
+
+          ai_version_bump="${{ steps.ai_release_info.outputs.version_bump }}"
+
+          case "$ai_version_bump" in
+            "major")
+              major=$((major + 1)); minor=0; patch=0
+              ;;
+            "minor")
+              minor=$((minor + 1)); patch=0
+              ;;
+            "patch")
+              patch=$((patch + 1))
+              ;;
+            *)
+              echo "Error: Invalid version bump type from AI: '$ai_version_bump'"
+              exit 1
+              ;;
+          esac
+
+          new_version="v$major.$minor.$patch"
+          echo "version=$new_version" >> $GITHUB_OUTPUT
+
+      - name: Create Draft Release on GitHub
+        if: steps.git_info.outputs.has_new_commits == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.new_version.outputs.version }}" \
+            --title "${{ steps.new_version.outputs.version }}" \
+            --notes "${{ steps.ai_release_info.outputs.release_notes }}" \
+            --draft 
