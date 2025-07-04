@@ -13,14 +13,11 @@
     "test:ui": "vitest --ui"
   },
   "keywords": [
-    "html",
-    "element",
-    "HTMLElement",
+    "html element",
     "type guard",
-    "DOM",
-    "validation",
-    "utility",
-    "typescript"
+    "DOM validation",
+    "typescript utility",
+    "element checking"
   ],
   "author": "devcomfort",
   "license": "MIT",
