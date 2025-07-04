@@ -24,17 +24,20 @@
   "packageManager": "pnpm@10.6.5",
   "devDependencies": {
     "@types/node": "^24.0.10",
+    "@vitest/browser": "^3.2.4",
     "@vitest/ui": "3.2.4",
     "jsdom": "^26.1.0",
     "pkgroll": "^2.13.1",
+    "playwright": "^1.53.2",
     "typescript": "^5.8.3",
+    "uuid": "^11.1.0",
     "vitest": "^3.2.4"
   },
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "require": "./dist/index.cjs",
-      "import": "./dist/index.mjs",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/index.mjs"
     }
   },
   "files": [
