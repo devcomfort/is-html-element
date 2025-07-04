@@ -62,7 +62,7 @@ jobs:
       - name: Call AI for version and release notes
         if: steps.git_info.outputs.has_new_commits == 'true'
         id: ai_release_info
-        shell: bash -eo pipefail
+        shell: bash
         env:
           PROMPT_TEMPLATE: |
             You are an expert at software release management.
@@ -87,6 +87,7 @@ jobs:
               "release_notes": "### ✨ Features\n\n* Implemented a new search functionality.\n\n### 🐛 Bug Fixes\n\n* Fixed an issue where the login button was not visible."
             }
         run: |
+          set -eo pipefail
           prompt=$(printf "$PROMPT_TEMPLATE" "${{ steps.git_info.outputs.commit_logs }}")
 
           json_escaped_prompt=$(echo "$prompt" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}')
