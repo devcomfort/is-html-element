@@ -55,7 +55,7 @@ jobs:
             echo "No new commits since last tag. Nothing to release."
           else
             echo "has_new_commits=true" >> $GITHUB_OUTPUT
-            logs_for_json=$(echo "$logs" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}')
+            logs_for_json=$(echo "$logs" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\n", $0}')
             echo "commit_logs=$logs_for_json" >> $GITHUB_OUTPUT
           fi
           
@@ -66,7 +66,7 @@ jobs:
         env:
           PROMPT_TEMPLATE: |
             You are an expert at software release management.
-            Based on the following commit logs, please determine the appropriate SemVer version bump (major, minor, or patch) and generate concise, well-formatted release notes in Markdown.
+            Based on the following commit logs, please determine the appropriate SemVer version bump (major, minor, or patch) and generate detailed, well-formatted release notes in Markdown.
 
             Commit logs:
             ---
@@ -80,12 +80,20 @@ jobs:
             - If multiple types are present, choose the highest-ranking one (major > minor > patch).
             - Other commit types (docs, chore, refactor, style, test): do not trigger a version bump on their own, but should be included in the release notes. If only these types are present, suggest 'patch'.
 
+            The release notes should include the following sections:
+            - **Features**: List all new features added.
+            - **Bug Fixes**: List all bug fixes.
+            - **Documentation**: List all documentation updates.
+            - **Miscellaneous**: List all other changes (chore, refactor, style, test).
+
+            Each section should include a brief description of the changes and, if applicable, the commit message.
+
             The output must be a single, valid JSON object. Do not add any other text, explanations, or markdown code block fences like \`\`\`json. Your entire response must start with \`{\` and end with \`}\`.
             The value for the "release_notes" key MUST be a valid JSON string, meaning all internal newlines must be escaped as \\n.
             Example output:
             {
               "version_bump": "minor",
-              "release_notes": "### ✨ Features\n\n* Implemented a new search functionality.\n\n### 🐛 Bug Fixes\n\n* Fixed an issue where the login button was not visible."
+              "release_notes": "### ✨ Features\n\n* Added isHTMLElement function and tests.\n* Revamped test suite and proved motivation.\n* Made AI model configurable and improved payload creation.\n* Used package.json as version source and auto-committed bump.\n\n### 🐛 Bug Fixes\n\n* Enforced escaped newlines in AI prompt for valid JSON.\n* Used python env var for ultimate parsing robustness.\n* Replaced shell script with python for robust parsing.\n* Added http status check for AI API call.\n* Added validation for AI-generated version bump.\n* Corrected shell option syntax in workflow.\n\n### 📚 Documentation\n\n* Overhauled README and source code comments.\n* Refined package.json keywords for better discoverability.\n* Added GitHub Actions configuration details to README.\n* Added MIT license.\n\n### 🏗️ Miscellaneous\n\n* Migrated to pnpm.\n* Updated API key handling in release drafter.\n* Made API base URL configurable.\n* Added AI-powered release drafter and publisher.\n* Adjusted package exports order."
             }
           FIREWORKS_AI_MODEL: ${{ vars.FIREWORKS_AI_MODEL || 'accounts/fireworks/models/llama-v3-70b-instruct' }}
           PYTHON_PARSER: |
