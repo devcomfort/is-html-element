@@ -93,9 +93,9 @@ jobs:
           }'
           payload=$(printf "$payload_template" "$json_escaped_prompt")
 
-          response=$(curl -s -X POST ${{ secrets.FIREWORKS_API_BASE || 'https://api.fireworks.ai/inference/v1' }}/chat/completions \
+          response=$(curl -s -X POST ${{ vars.FIREWORKS_API_BASE || 'https://api.fireworks.ai/inference/v1' }}/chat/completions \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.FIREWORKS_API_KEY }}" \
+            -H "Authorization: Bearer ${{ vars.FIREWORKS_API_KEY }}" \
             -d "$payload"
           )
           
