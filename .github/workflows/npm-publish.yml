@@ -24,6 +24,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Sync package.json version with release tag
+        run: |
+          # Extract the version from the release tag (e.g., v1.2.3 -> 1.2.3)
+          RELEASE_VERSION=${{ github.ref_name }}
+          PACKAGE_VERSION=${RELEASE_VERSION#v}
+          echo "Syncing package.json to version ${PACKAGE_VERSION}"
+          pnpm version ${PACKAGE_VERSION} --no-git-tag-version --allow-same-version
+
       - name: Publish package to NPM
         run: pnpm publish --no-git-checks
         env:
