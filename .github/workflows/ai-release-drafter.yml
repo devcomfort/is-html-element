@@ -124,10 +124,14 @@ jobs:
 
             json_str = content_str[json_start:json_end+1]
 
+            # Clean up invalid unicode escape sequences that the AI might generate.
+            # This specifically targets '\\u' sequences that are not followed by 4 valid hex digits.
+            cleaned_json_str = re.sub(r'\\u(?![0-9a-fA-F]{4})', '', json_str)
+
             try:
-                content_json = json.loads(json_str)
+                content_json = json.loads(cleaned_json_str)
             except json.JSONDecodeError as e:
-                print(f"Error: Failed to parse inner JSON from string '{json_str}': {e}", file=sys.stderr)
+                print(f"Error: Failed to parse inner JSON from string '{cleaned_json_str}': {e}", file=sys.stderr)
                 sys.exit(1)
 
             version_bump = content_json.get("version_bump")
@@ -153,7 +157,7 @@ jobs:
             --arg content "$prompt" \
             '{
               "model": $model,
-              "max_tokens": 32768,
+              "max_tokens": 131072,
               "temperature": 0.1,
               "messages": [
                 {
