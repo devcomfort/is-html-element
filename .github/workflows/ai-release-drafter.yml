@@ -81,6 +81,7 @@ jobs:
             - Other commit types (docs, chore, refactor, style, test): do not trigger a version bump on their own, but should be included in the release notes. If only these types are present, suggest 'patch'.
 
             The output must be a single, valid JSON object. Do not add any other text, explanations, or markdown code block fences like \`\`\`json. Your entire response must start with \`{\` and end with \`}\`.
+            The value for the "release_notes" key MUST be a valid JSON string, meaning all internal newlines must be escaped as \\n.
             Example output:
             {
               "version_bump": "minor",
