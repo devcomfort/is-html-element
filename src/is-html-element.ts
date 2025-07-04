@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+
 /**
  * Checks if a given value is an instance of HTMLElement.
  *
