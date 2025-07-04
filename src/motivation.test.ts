@@ -84,8 +84,53 @@ ${problematicTags.join(', ')}
 
         console.log(report);
 
-        // Assertions to ensure the data remains consistent with current DOM standards.
-        expect(specificInterfaceCount).toBe(73);
-        expect(problematicTags.length).toBe(39);
+        // This snapshot ensures that the list of problematic tags is tracked over
+        // time. If a future browser update provides a specific interface for a
+        // tag that previously lacked one (e.g., HTMLSummaryElement), this
+        // snapshot will fail, alerting us to the change in the DOM standard.
+        // We can then update the snapshot to reflect the new reality.
+        expect(problematicTags).toMatchInlineSnapshot(`
+          [
+            "abbr",
+            "address",
+            "article",
+            "aside",
+            "b",
+            "bdi",
+            "bdo",
+            "cite",
+            "code",
+            "dd",
+            "dfn",
+            "dt",
+            "em",
+            "figcaption",
+            "figure",
+            "footer",
+            "header",
+            "hgroup",
+            "i",
+            "kbd",
+            "main",
+            "mark",
+            "nav",
+            "noscript",
+            "rp",
+            "rt",
+            "ruby",
+            "s",
+            "samp",
+            "search",
+            "section",
+            "small",
+            "strong",
+            "sub",
+            "summary",
+            "sup",
+            "u",
+            "var",
+            "wbr",
+          ]
+        `);
     });
 }); 
