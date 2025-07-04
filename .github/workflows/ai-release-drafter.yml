@@ -86,19 +86,26 @@ jobs:
               "version_bump": "minor",
               "release_notes": "### ✨ Features\n\n* Implemented a new search functionality.\n\n### 🐛 Bug Fixes\n\n* Fixed an issue where the login button was not visible."
             }
+          FIREWORKS_AI_MODEL: ${{ vars.FIREWORKS_AI_MODEL || 'accounts/fireworks/models/llama-v3-70b-instruct' }}
         run: |
           set -eo pipefail
           prompt=$(printf "$PROMPT_TEMPLATE" "${{ steps.git_info.outputs.commit_logs }}")
 
-          json_escaped_prompt=$(echo "$prompt" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}')
-
-          payload_template='{
-            "model": "accounts/fireworks/models/firefunction-v1",
-            "max_tokens": 1024,
-            "temperature": 0.1,
-            "messages": [ { "role": "user", "content": "%s" } ]
-          }'
-          payload=$(printf "$payload_template" "$json_escaped_prompt")
+          payload=$(jq -n \
+            --arg model "$FIREWORKS_AI_MODEL" \
+            --arg content "$prompt" \
+            '{
+              "model": $model,
+              "max_tokens": 1024,
+              "temperature": 0.1,
+              "messages": [
+                {
+                  "role": "user",
+                  "content": $content
+                }
+              ]
+            }'
+          )
 
           http_response=$(curl -s -w "%{http_code}" -o response.txt -X POST ${{ secrets.FIREWORKS_API_BASE || 'https://api.fireworks.ai/inference/v1' }}/chat/completions \
             -H "Content-Type: application/json" \
