@@ -116,40 +116,59 @@ jobs:
           response_body=$(cat response.txt)
           
           echo "AI API HTTP Status: $http_response"
-          echo "AI API Response Body: $response_body"
           
           if [ "$http_response" -ne 200 ]; then
             echo "Error: AI API call failed with HTTP status $http_response."
+            echo "Response Body:"
+            cat response.txt
             exit 1
           fi
 
-          ai_content=$(echo "$response_body" | jq -r '.choices[0].message.content')
-          
-          # Some models wrap their response in ```json ... ```, so we strip that.
-          if [[ $ai_content == "```json"* ]]; then
-            ai_content=$(echo "$ai_content" | sed -e 's/^```json//' -e 's/```$//')
-          fi
+          python -c |
+            import sys, json, os, re
 
-          if ! echo "$ai_content" | jq empty; then
-            echo "Error: AI output is not valid JSON."
-            echo "Output was: $ai_content"
-            exit 1
-          fi
+            try:
+                response_data = json.load(sys.stdin)
+            except json.JSONDecodeError:
+                print("Error: Failed to parse main API response JSON from response.txt.", file=sys.stderr)
+                sys.exit(1)
 
-          version_bump=$(echo "$ai_content" | jq -r '.version_bump')
-          release_notes=$(echo "$ai_content" | jq -r '.release_notes')
+            content_str = response_data.get("choices", [{}])[0].get("message", {}).get("content", "")
 
-          if [ -z "$version_bump" ] || [ "$version_bump" == "null" ]; then
-            echo "Error: AI did not return a valid 'version_bump'. Aborting."
-            echo "AI Response Content: $ai_content"
-            exit 1
-          fi
+            if not content_str:
+                print("Error: AI response content is empty.", file=sys.stderr)
+                print(f"Full response: {response_data}", file=sys.stderr)
+                sys.exit(1)
+                
+            match = re.search(r"\{.*\}", content_str, re.DOTALL)
+            if not match:
+                print("Error: Could not find a JSON object in the AI response.", file=sys.stderr)
+                print(f"Content was:\n{content_str}", file=sys.stderr)
+                sys.exit(1)
+            
+            json_str = match.group(0)
 
-          delimiter=$(cat /proc/sys/kernel/random/uuid)
-          echo "version_bump=$version_bump" >> $GITHUB_OUTPUT
-          echo "release_notes<<$delimiter" >> $GITHUB_OUTPUT
-          echo "$release_notes" >> $GITHUB_OUTPUT
-          echo "$delimiter" >> $GITHUB_OUTPUT
+            try:
+                content_json = json.loads(json_str)
+            except json.JSONDecodeError as e:
+                print(f"Error: Failed to parse inner JSON: {e}", file=sys.stderr)
+                print(f"Extracted string was:\n{json_str}", file=sys.stderr)
+                sys.exit(1)
+
+            version_bump = content_json.get("version_bump")
+            release_notes = content_json.get("release_notes")
+
+            if not version_bump:
+                print("Error: Could not find `version_bump` in the parsed JSON.", file=sys.stderr)
+                sys.exit(1)
+            
+            with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                f.write(f"version_bump={version_bump}\n")
+                delimiter = os.urandom(16).hex()
+                f.write(f"release_notes<<{delimiter}\n")
+                f.write(f"{release_notes}\n")
+                f.write(f"{delimiter}\n")
+          ' < response.txt
 
       - name: Calculate next version
         if: steps.git_info.outputs.has_new_commits == 'true'
