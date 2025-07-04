@@ -1,0 +1,48 @@
+{
+  "name": "is-html-element",
+  "version": "1.0.0",
+  "description": "Type-safe utility to check if an element is an HTMLElement or a specific HTML type.",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "source": "src/is-html-element.ts",
+  "scripts": {
+    "build": "pkgroll",
+    "test": "vitest",
+    "test:ui": "vitest --ui"
+  },
+  "keywords": [
+    "html",
+    "element",
+    "HTMLElement",
+    "type guard",
+    "DOM",
+    "validation",
+    "utility",
+    "typescript"
+  ],
+  "author": "devcomfort",
+  "license": "MIT",
+  "packageManager": "pnpm@10.6.5",
+  "devDependencies": {
+    "@types/node": "^24.0.10",
+    "@vitest/ui": "3.2.4",
+    "jsdom": "^26.1.0",
+    "pkgroll": "^2.13.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
+}
