@@ -48,7 +48,7 @@ jobs:
             commit_range="HEAD"
           fi
           
-          logs=$(git log $commit_range --pretty=format:"- %s")
+          logs=$(git log $commit_range --pretty=format:"%s<FIELD_DELIMITER>%b<FIELD_DELIMITER>%h<FIELD_DELIMITER>%an<COMMIT_DELIMITER>")
           
           if [ -z "$logs" ]; then
             echo "has_new_commits=false" >> $GITHUB_OUTPUT
@@ -68,35 +68,33 @@ jobs:
         shell: bash
         env:
           PROMPT_TEMPLATE: |
-            You are an expert at software release management.
-            Based on the following commit logs, please determine the appropriate SemVer version bump (major, minor, or patch) and generate detailed, well-formatted release notes in Markdown.
+            You are an expert technical writer preparing release notes for a developer audience. Your goal is to create notes that are clear, concise, and provide actionable insights.
+
+            Based on the following structured commit logs (each commit is separated by '<COMMIT_DELIMITER>', and its fields are separated by '<FIELD_DELIMITER>'), generate an appropriate SemVer version bump and detailed, well-formatted release notes in Markdown.
+
+            Commit Log Structure: <subject><FIELD_DELIMITER><body><FIELD_DELIMITER><hash><FIELD_DELIMITER><author>
 
             Commit logs:
             ---
             %s
             ---
 
-            Follow these rules for versioning:
-            - A commit starting with 'feat': suggests a 'minor' bump.
-            - A commit starting with 'fix': suggests a 'patch' bump.
-            - A commit message containing 'BREAKING CHANGE' in its body or footer: suggests a 'major' bump.
-            - If multiple types are present, choose the highest-ranking one (major > minor > patch).
-            - Other commit types (docs, chore, refactor, style, test): do not trigger a version bump on their own, but should be included in the release notes. If only these types are present, suggest 'patch'.
+            Follow these rules for your response:
+            1.  **Versioning**: Determine the version bump (major, minor, patch) based on conventional commit types found in the subjects (`feat`, `fix`, etc.). A `BREAKING CHANGE` in the commit body or footer indicates a `major` bump. If only `chore`, `docs`, `style`, `refactor`, or `test` types are present, suggest `patch`.
+            2.  **Breaking Changes Section**: If any commit contains 'BREAKING CHANGE', create a dedicated '🚨 BREAKING CHANGES' section at the very top. This is the most critical information for developers.
+            3.  **Categorization**: Group other commits into '✨ Features', '🐛 Bug Fixes', and '🚀 Miscellaneous' (for `chore`, `docs`, `refactor`, etc.).
+            4.  **Formatting Each Entry**: For each commit, create a bullet point.
+                - Start with the commit subject.
+                - If the commit body provides extra details, summarize them concisely.
+                - Include a link to the commit on GitHub using its hash. The repository is `${{ github.repository }}`.
+                - Credit the author.
+                - Format: `- <Description of change>. ([<hash>](https://github.com/${{ github.repository }}/commit/<hash>)) by @<author>`
+            5.  **Output Format**: Your entire response MUST be a single, valid JSON object. Do not add any other text, explanations, or markdown code block fences. The value for the "release_notes" key must be a valid JSON string (newlines escaped as \\n).
 
-            The release notes should include the following sections:
-            - **Features**: List all new features added.
-            - **Bug Fixes**: List all bug fixes.
-            - **Documentation**: List all documentation updates.
-            - **Miscellaneous**: List all other changes (chore, refactor, style, test).
-
-            Each section should include a brief description of the changes and, if applicable, the commit message.
-
-            The output must be a single, valid JSON object. Do not add any other text, explanations, or markdown code block fences like \`\`\`json. Your entire response must start with \`{\` and end with \`}\`.
-            The value for the "release_notes" key MUST be a valid JSON string, meaning all internal newlines must be escaped as \\n.
             Example output:
             {
-              "version_bump": "minor",
-              "release_notes": "### ✨ Features\n\n* Added isHTMLElement function and tests.\n* Revamped test suite and proved motivation.\n* Made AI model configurable and improved payload creation.\n* Used package.json as version source and auto-committed bump.\n\n### 🐛 Bug Fixes\n\n* Enforced escaped newlines in AI prompt for valid JSON.\n* Used python env var for ultimate parsing robustness.\n* Replaced shell script with python for robust parsing.\n* Added http status check for AI API call.\n* Added validation for AI-generated version bump.\n* Corrected shell option syntax in workflow.\n\n### 📚 Documentation\n\n* Overhauled README and source code comments.\n* Refined package.json keywords for better discoverability.\n* Added GitHub Actions configuration details to README.\n* Added MIT license.\n\n### 🏗️ Miscellaneous\n\n* Migrated to pnpm.\n* Updated API key handling in release drafter.\n* Made API base URL configurable.\n* Added AI-powered release drafter and publisher.\n* Adjusted package exports order."
+              "version_bump": "major",
+              "release_notes": "### 🚨 BREAKING CHANGES\n\n* The API endpoint for user authentication has been changed. ([a1b2c3d](https://github.com/devcomfort/html-element-validator/commit/a1b2c3d)) by @devcomfort\n\n### ✨ Features\n\n* Added a new dark mode toggle. ([d4e5f6g](https://github.com/devcomfort/html-element-validator/commit/d4e5f6g)) by @devcomfort"
             }
           FIREWORKS_AI_MODEL: ${{ vars.FIREWORKS_AI_MODEL || 'accounts/fireworks/models/llama-v3-70b-instruct' }}
           PYTHON_PARSER: |
