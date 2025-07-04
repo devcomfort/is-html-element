@@ -168,17 +168,18 @@ jobs:
 
           python -c "$PYTHON_PARSER"
 
-      - name: Calculate next version
+      - name: Calculate and Bump Version
         if: steps.git_info.outputs.has_new_commits == 'true'
         id: new_version
         run: |
-          latest_tag="${{ steps.git_info.outputs.latest_tag }}"
-          if [ -z "$latest_tag" ]; then
-            latest_tag="v0.0.0"
-          fi
+          set -eo pipefail
           
-          current_version=${latest_tag#v}
-          IFS='.' read -r major minor patch <<< "$current_version"
+          current_version=$(jq -r .version package.json)
+          echo "Current version from package.json: $current_version"
+
+          major=$(echo $current_version | cut -d. -f1)
+          minor=$(echo $current_version | cut -d. -f2)
+          patch=$(echo $current_version | cut -d. -f3)
 
           ai_version_bump="${{ steps.ai_release_info.outputs.version_bump }}"
 
@@ -198,9 +199,31 @@ jobs:
               ;;
           esac
 
-          new_version="v$major.$minor.$patch"
-          echo "version=$new_version" >> $GITHUB_OUTPUT
+          new_version_number="$major.$minor.$patch"
+          new_version_tag="v$new_version_number"
+          
+          echo "New version: $new_version_tag"
+          echo "version=$new_version_tag" >> $GITHUB_OUTPUT
+          echo "version_number=$new_version_number" >> $GITHUB_OUTPUT
 
+      - name: Commit version bump
+        if: steps.git_info.outputs.has_new_commits == 'true'
+        run: |
+          set -eo pipefail
+          pnpm version ${{ steps.new_version.outputs.version_number }} --no-git-tag-version --allow-same-version
+          
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          if git diff --staged --quiet; then
+            echo "No version changes to commit."
+          else
+            # There might be no lockfile change if dependencies are not affected.
+            git add package.json pnpm-lock.yaml || git add package.json
+            git commit -m "chore(release): bump version to ${{ steps.new_version.outputs.version }}" -m "[skip ci]"
+            git push
+          fi
+          
       - name: Create Draft Release on GitHub
         if: steps.git_info.outputs.has_new_commits == 'true'
         env:
