@@ -101,3 +101,28 @@ Contributions are welcome! Please open an issue or submit a pull request on [Git
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## GitHub Actions Configuration
+
+This project uses GitHub Actions for automated testing, release drafting, and NPM publishing. To use these workflows, you need to configure the following secrets and variables in your GitHub repository settings:
+
+### Required Secrets
+
+1. **`FIREWORKS_API_KEY`**: Your Fireworks AI API key.
+   - **How to obtain**: Create an account on the [Fireworks AI platform](https://fireworks.ai/), go to your account settings, and generate a new API key.
+   - **Repository settings**: Go to your repository on GitHub, navigate to `Settings` > `Actions` > `Secrets and variables` > `Actions`, and add `FIREWORKS_API_KEY` as a new secret.
+
+2. **`NPM_TOKEN`**: Your NPM authentication token.
+   - **How to obtain**: Log in to your [NPM account](https://www.npmjs.com/), go to your account settings, enable 2FA, and generate an access token.
+   - **Repository settings**: Add `NPM_TOKEN` as a new secret in the same location as above.
+
+### Optional Variables
+
+1. **`FIREWORKS_AI_MODEL`**: The AI model to use for release drafting.
+   - **Default value**: `'accounts/fireworks/models/llama-v3-70b-instruct'`
+   - **How to set**: Go to your repository on GitHub, navigate to `Settings` > `Actions` > `Secrets and variables` > `Actions`, and add `FIREWORKS_AI_MODEL` as a new variable if you want to override the default.
+
+### Notes
+
+- The `GITHUB_TOKEN` is automatically provided by GitHub Actions and does not need to be manually configured.
+- Ensure that you keep your secrets secure and do not expose them in your code or public discussions.
