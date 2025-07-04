@@ -55,7 +55,7 @@ jobs:
             echo "No new commits since last tag. Nothing to release."
           else
             echo "has_new_commits=true" >> $GITHUB_OUTPUT
-            logs_for_json=$(echo "$logs" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\n", $0}')
+            logs_for_json=$(echo "$logs" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/\n/\\n/g')
             echo "commit_logs=$logs_for_json" >> $GITHUB_OUTPUT
           fi
           
