@@ -80,7 +80,7 @@ jobs:
             - If multiple types are present, choose the highest-ranking one (major > minor > patch).
             - Other commit types (docs, chore, refactor, style, test): do not trigger a version bump on their own, but should be included in the release notes. If only these types are present, suggest 'patch'.
 
-            The output must be a single, valid JSON object with two keys: "version_bump" and "release_notes". Do not add any other text, explanations, or code block fences.
+            The output must be a single, valid JSON object. Do not add any other text, explanations, or markdown code block fences like \`\`\`json. Your entire response must start with \`{\` and end with \`}\`.
             Example output:
             {
               "version_bump": "minor",
@@ -125,6 +125,11 @@ jobs:
 
           ai_content=$(echo "$response_body" | jq -r '.choices[0].message.content')
           
+          # Some models wrap their response in ```json ... ```, so we strip that.
+          if [[ $ai_content == "```json"* ]]; then
+            ai_content=$(echo "$ai_content" | sed -e 's/^```json//' -e 's/```$//')
+          fi
+
           if ! echo "$ai_content" | jq empty; then
             echo "Error: AI output is not valid JSON."
             echo "Output was: $ai_content"
