@@ -55,8 +55,11 @@ jobs:
             echo "No new commits since last tag. Nothing to release."
           else
             echo "has_new_commits=true" >> $GITHUB_OUTPUT
-            logs_for_json=$(echo "$logs" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/\n/\\n/g')
-            echo "commit_logs=$logs_for_json" >> $GITHUB_OUTPUT
+            logs_for_prompt=$(echo "$logs" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
+            delimiter=$(openssl rand -hex 16)
+            echo "commit_logs<<$delimiter" >> "$GITHUB_OUTPUT"
+            echo "$logs_for_prompt" >> "$GITHUB_OUTPUT"
+            echo "$delimiter" >> "$GITHUB_OUTPUT"
           fi
           
       - name: Call AI for version and release notes
