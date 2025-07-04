@@ -25,8 +25,18 @@ const TAG_NAMES = [
 
 /**
  * This test suite provides a comparative analysis between `isHTMLElement` and
- * the native `instanceof` operator to quantitatively prove the superiority
- * and necessity of this library.
+ * the native `instanceof` operator. Its primary purpose is not to test the
+ * `isHTMLElement` function itself, but to programmatically and quantitatively
+ * prove the core motivation for this library's existence.
+ *
+ * The test works by iterating through every standard HTML tag and checking if
+ * the created element's constructor is the generic `HTMLElement`. If it is,
+ * it means that tag lacks a specific interface (e.g., `HTMLArticleElement`)
+ * in the current browser environment. This is the exact scenario where `instanceof`
+ * fails, as it cannot distinguish between any of these elements.
+ *
+ * The generated report provides a real-time accuracy score for `instanceof`,
+ * demonstrating why a `tagName`-based check is superior and necessary.
  */
 describe('Motivation: `isHTMLElement` vs. `instanceof` Accuracy', () => {
 

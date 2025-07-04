@@ -83,7 +83,7 @@ pnpm test
 The test suite is divided into two main files:
 
 -   `src/is-html-element.test.ts`: This is a unit test file that verifies the core functionality of the `isHTMLElement` function. It checks for correct behavior with valid elements, various invalid inputs, and ensures its type-guarding mechanism works as expected.
--   `src/motivation.test.ts`: This file generates the comparative analysis report shown in the "Motivation" section. Its purpose is to quantitatively demonstrate why `isHTMLElement` is a superior and necessary tool compared to using `instanceof` alone.
+-   `src/motivation.test.ts`: This test provides the hard data to justify this library's existence. It iterates through all standard HTML tags, creates an element for each, and checks if its constructor is the generic `HTMLElement`. If it is, `instanceof` cannot distinguish that element from any other generic element. This test proves that a significant percentage of HTML tags are "problematic" for `instanceof`, making a `tagName`-based check essential for reliable type-guarding.
 
 ## A Note on Future Compatibility & Maintenance
 
