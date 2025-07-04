@@ -100,15 +100,23 @@ jobs:
           }'
           payload=$(printf "$payload_template" "$json_escaped_prompt")
 
-          response=$(curl -s -X POST ${{ vars.FIREWORKS_API_BASE || 'https://api.fireworks.ai/inference/v1' }}/chat/completions \
+          http_response=$(curl -s -w "%{http_code}" -o response.txt -X POST ${{ secrets.FIREWORKS_API_BASE || 'https://api.fireworks.ai/inference/v1' }}/chat/completions \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.FIREWORKS_API_KEY }}" \
             -d "$payload"
           )
           
-          echo "AI Response: $response"
+          response_body=$(cat response.txt)
           
-          ai_content=$(echo "$response" | jq -r '.choices[0].message.content')
+          echo "AI API HTTP Status: $http_response"
+          echo "AI API Response Body: $response_body"
+          
+          if [ "$http_response" -ne 200 ]; then
+            echo "Error: AI API call failed with HTTP status $http_response."
+            exit 1
+          fi
+
+          ai_content=$(echo "$response_body" | jq -r '.choices[0].message.content')
           
           if ! echo "$ai_content" | jq empty; then
             echo "Error: AI output is not valid JSON."
