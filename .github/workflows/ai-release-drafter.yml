@@ -67,6 +67,7 @@ jobs:
         id: ai_release_info
         shell: bash
         env:
+          COMMIT_LOGS: ${{ steps.git_info.outputs.commit_logs }}
           PROMPT_TEMPLATE: |
             You are an expert technical writer preparing release notes for a developer audience. Your goal is to create notes that are clear, concise, and provide actionable insights.
 
@@ -113,12 +114,15 @@ jobs:
                 print("Error: AI response content is empty.", file=sys.stderr)
                 sys.exit(1)
 
-            match = re.search(r"\{.*\}", content_str, re.DOTALL)
-            if not match:
-                print(f"Error: Could not find a JSON object in the AI response content:\n{content_str}", file=sys.stderr)
+            # Robustly find the JSON object within the AI's response
+            json_start = content_str.find('{')
+            json_end = content_str.rfind('}')
+
+            if json_start == -1 or json_end == -1 or json_end < json_start:
+                print(f"Error: Could not find a valid JSON object in the AI response content:\n{content_str}", file=sys.stderr)
                 sys.exit(1)
 
-            json_str = match.group(0)
+            json_str = content_str[json_start:json_end+1]
 
             try:
                 content_json = json.loads(json_str)
@@ -142,7 +146,7 @@ jobs:
                 f.write(f"{delimiter}\n")
         run: |
           set -eo pipefail
-          prompt=$(printf "$PROMPT_TEMPLATE" "${{ steps.git_info.outputs.commit_logs }}")
+          prompt=$(printf "$PROMPT_TEMPLATE" "$COMMIT_LOGS")
 
           payload=$(jq -n \
             --arg model "$FIREWORKS_AI_MODEL" \
