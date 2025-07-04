@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build
+        run: pnpm build
+
       - name: Sync package.json version with release tag
         run: |
           # Extract the version from the release tag (e.g., v1.2.3 -> 1.2.3)
