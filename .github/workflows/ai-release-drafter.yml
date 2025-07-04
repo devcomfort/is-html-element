@@ -119,6 +119,12 @@ jobs:
           version_bump=$(echo "$ai_content" | jq -r '.version_bump')
           release_notes=$(echo "$ai_content" | jq -r '.release_notes')
 
+          if [ -z "$version_bump" ] || [ "$version_bump" == "null" ]; then
+            echo "Error: AI did not return a valid 'version_bump'. Aborting."
+            echo "AI Response Content: $ai_content"
+            exit 1
+          fi
+
           delimiter=$(cat /proc/sys/kernel/random/uuid)
           echo "version_bump=$version_bump" >> $GITHUB_OUTPUT
           echo "release_notes<<$delimiter" >> $GITHUB_OUTPUT
